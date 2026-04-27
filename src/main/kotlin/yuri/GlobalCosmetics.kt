@@ -59,6 +59,14 @@ object GlobalCosmetics {
             0.1f,
             0.1f,
             0.1f
+        ),
+        PlayerCosmetic(
+            UUID.fromString("beb87cfc-eac0-49d0-9e33-5f8e6fa49258"),
+            "estro",
+            "&#838383&lE&#959595&ls&#A6A6A6&lt&#B8B8B8&lr&#CACACA&lo&#DCDCDC&lP&#EDEDED&lu&#FFFFFF&lp",
+            0.3f,
+            0.3f,
+            0.3f
         )
     ).associateBy { it.uuid }
     private val resolvedNames: MutableMap<UUID, String> = mutableMapOf()
