@@ -41,7 +41,7 @@ object DungeonMapRuntime {
                     MapUpdater.updatePlayers()
                 }
                 if (DungeonInfo.mimicRoom == null &&
-                    (DungeonMapLocation.dungeonFloorNumber ?: 0) > 5 &&
+                    DungeonMapLocation.dungeonFloorNumber > 5 &&
                     !DungeonMapLocation.inBoss &&
                     !ScoreCalculation.mimicKilled
                 ) {
