@@ -27,7 +27,11 @@ object DungeonUtils {
         "thorn",
         "livid",
         "sadan",
-        "wither key"
+        "wither key",
+        "skyblock",
+        "hypixel",
+        "rift",
+        "kuudra"
     )
 
     @JvmStatic

@@ -104,14 +104,7 @@ public class ModelBlockRendererMixin {
         boolean shade,
         Operation<Void> original
     ) {
-        BlockPos pos = TranslucentDoorEffects.putQuadBlockPos();
-        if (pos == null) {
-            original.call(consumer, pose, quad, brightness, red, green, blue, alpha, lightmap, packed, shade);
-            return;
-        }
-        float m = TranslucentDoorEffects.shouldTintDoorBlock(pos)
-            ? TranslucentDoorEffects.doorTintMultiplier()
-            : 1.0f;
+        float m = yuri$doorVertexTintMultiplier();
         original.call(
             consumer,
             pose,
@@ -125,5 +118,42 @@ public class ModelBlockRendererMixin {
             packed,
             shade
         );
+    }
+
+    /**
+     * Second {@code putBulkData} overload (flat / non-array path) — vanilla uses it for many solid-model quads.
+     * Without wrapping this, chiseled stone and similar door fills stayed fully opaque.
+     */
+    @WrapOperation(
+        method = "putQuadData(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;Lnet/minecraft/client/renderer/block/ModelBlockRenderer$CommonRenderStorage;I)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData(Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;FFFFII)V"
+        )
+    )
+    private void yuri$tintDoorPutBulkFlat(
+        VertexConsumer consumer,
+        PoseStack.Pose pose,
+        BakedQuad quad,
+        float red,
+        float green,
+        float blue,
+        float alpha,
+        int packedLight0,
+        int packedLight1,
+        Operation<Void> original
+    ) {
+        float m = yuri$doorVertexTintMultiplier();
+        original.call(consumer, pose, quad, red * m, green * m, blue * m, alpha * m, packedLight0, packedLight1);
+    }
+
+    private static float yuri$doorVertexTintMultiplier() {
+        BlockPos pos = TranslucentDoorEffects.putQuadBlockPos();
+        if (pos == null) {
+            return 1.0f;
+        }
+        return TranslucentDoorEffects.shouldTintDoorBlock(pos)
+            ? TranslucentDoorEffects.doorTintMultiplier()
+            : 1.0f;
     }
 }
