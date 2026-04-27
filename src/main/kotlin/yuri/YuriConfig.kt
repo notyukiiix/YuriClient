@@ -5,7 +5,10 @@ import net.fabricmc.loader.api.FabricLoader
 import yuri.data.columns.general.modules.ChatModule
 import yuri.data.columns.dev.modules.CustomScoreboardModule
 import yuri.data.columns.dev.modules.OpsecModule
+import yuri.client.YuriDungeonMapHud
+import yuri.client.YuriDungeonSummaryHud
 import yuri.data.columns.cheats.modules.DoorEspModule
+import yuri.data.columns.dungeons.map.compat.DungeonMapConfig
 import yuri.data.columns.cheats.modules.MobEspModule
 import yuri.data.columns.cheats.modules.TranslucentDoorModule
 import yuri.data.columns.visual.modules.ImageHudModule
@@ -188,6 +191,23 @@ object YuriConfig {
             CustomScoreboardModule.setEnabled(optionIndex, raw.trim().toBoolean())
         }
 
+        YuriDungeonMapHud.hudX = getInt(properties, "dungeon_map.hud_x", YuriDungeonMapHud.hudX)
+        YuriDungeonMapHud.hudY = getInt(properties, "dungeon_map.hud_y", YuriDungeonMapHud.hudY)
+        DungeonMapConfig.mapExtraInfo =
+            properties.getProperty("dungeon_map.extra_info", DungeonMapConfig.mapExtraInfo.toString()).toBoolean()
+        DungeonMapConfig.mapHideInBoss =
+            properties.getProperty("dungeon_map.hide_in_boss", DungeonMapConfig.mapHideInBoss.toString()).toBoolean()
+        DungeonMapConfig.dungeonMapCheater =
+            properties.getProperty("dungeon_map.cheater", DungeonMapConfig.dungeonMapCheater.toString()).toBoolean()
+        DungeonMapConfig.boxWitherDoors =
+            properties.getProperty("dungeon_map.box_wither", DungeonMapConfig.boxWitherDoors.toString()).toBoolean()
+        DungeonMapConfig.highlightMimicRoom =
+            properties.getProperty("dungeon_map.highlight_mimic", DungeonMapConfig.highlightMimicRoom.toString()).toBoolean()
+        YuriDungeonSummaryHud.hudX = getInt(properties, "dungeon_summary.hud_x", YuriDungeonSummaryHud.hudX)
+        YuriDungeonSummaryHud.hudY = getInt(properties, "dungeon_summary.hud_y", YuriDungeonSummaryHud.hudY)
+        YuriDungeonSummaryHud.enabled =
+            properties.getProperty("dungeon_summary.enabled", YuriDungeonSummaryHud.enabled.toString()).toBoolean()
+
         ImageHudModule.clearAllImages()
         val imageCount = getInt(properties, "image_hud.count", -1)
         if (imageCount >= 0) {
@@ -279,6 +299,17 @@ object YuriConfig {
         for (optionIndex in 0 until CustomScoreboardModule.optionCount()) {
             properties.setProperty("custom_scoreboard.$optionIndex", CustomScoreboardModule.isEnabled(optionIndex).toString())
         }
+
+        properties.setProperty("dungeon_map.hud_x", YuriDungeonMapHud.hudX.toString())
+        properties.setProperty("dungeon_map.hud_y", YuriDungeonMapHud.hudY.toString())
+        properties.setProperty("dungeon_map.extra_info", DungeonMapConfig.mapExtraInfo.toString())
+        properties.setProperty("dungeon_map.hide_in_boss", DungeonMapConfig.mapHideInBoss.toString())
+        properties.setProperty("dungeon_map.cheater", DungeonMapConfig.dungeonMapCheater.toString())
+        properties.setProperty("dungeon_map.box_wither", DungeonMapConfig.boxWitherDoors.toString())
+        properties.setProperty("dungeon_map.highlight_mimic", DungeonMapConfig.highlightMimicRoom.toString())
+        properties.setProperty("dungeon_summary.hud_x", YuriDungeonSummaryHud.hudX.toString())
+        properties.setProperty("dungeon_summary.hud_y", YuriDungeonSummaryHud.hudY.toString())
+        properties.setProperty("dungeon_summary.enabled", YuriDungeonSummaryHud.enabled.toString())
 
         val imageCount = ImageHudModule.imageCount()
         properties.setProperty("image_hud.count", imageCount.toString())

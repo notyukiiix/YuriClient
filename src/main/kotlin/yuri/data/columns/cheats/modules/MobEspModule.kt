@@ -2,6 +2,7 @@ package yuri.data.columns.cheats.modules
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents
 import net.minecraft.client.Minecraft
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.client.player.AbstractClientPlayer
@@ -15,6 +16,7 @@ import net.minecraft.world.entity.monster.EnderMan
 import net.minecraft.world.entity.monster.Giant
 import net.minecraft.world.entity.player.Player
 import yuri.YuriData
+import yuri.data.columns.cheats.client.MobEspWorldRenderer
 import yuri.util.DungeonUtils
 import java.util.LinkedHashSet
 
@@ -119,12 +121,34 @@ object MobEspModule {
     @JvmStatic
     fun shouldShowHiddenStealthy(): Boolean = shouldHiddenMobs() && toggles[OPTION_SHOW_STEALTHY]
 
+    /**
+     * Invokes [action] for each loaded entity that should show Mob ESP (starred / shadow assassin targets).
+     */
+    @JvmStatic
+    fun forEachEspTarget(action: (Entity) -> Unit) {
+        if (!module.enabled || !DungeonUtils.inDungeons()) {
+            return
+        }
+        val level = Minecraft.getInstance().level ?: return
+        val ids = LinkedHashSet<Int>(starred.size + shadowAssassins.size)
+        ids.addAll(starred)
+        ids.addAll(shadowAssassins)
+        for (id in ids) {
+            val entity = level.getEntity(id) ?: continue
+            if (entity.isRemoved) {
+                continue
+            }
+            action(entity)
+        }
+    }
+
     @JvmStatic
     fun registerEvents() {
         if (eventsRegistered) {
             return
         }
         eventsRegistered = true
+        WorldRenderEvents.END_MAIN.register(MobEspWorldRenderer::render)
         ClientTickEvents.END_WORLD_TICK.register(ClientTickEvents.EndWorldTick { world ->
             if (!module.enabled || !DungeonUtils.inDungeons()) {
                 starred.clear()

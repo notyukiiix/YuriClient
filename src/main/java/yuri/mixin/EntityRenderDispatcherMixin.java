@@ -17,10 +17,6 @@ public abstract class EntityRenderDispatcherMixin {
         if (MobEspModule.shouldRevealHiddenMob(entity)) {
             entity.setInvisible(false);
         }
-        if (MobEspModule.shouldStarredMobEsp(entity)) {
-            cir.setReturnValue(true);
-            return;
-        }
         if (RenderOptimiserModule.shouldHideDeathAnimationRender(entity)) {
             cir.setReturnValue(false);
             return;

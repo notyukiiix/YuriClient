@@ -26,5 +26,8 @@ bin/
 ### VS Code ###
 .vscode/
 
+### Local reference clones ###
+.noamm_sparse/
+
 ### Mac OS ###
 .DS_Store

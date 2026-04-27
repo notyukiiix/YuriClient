@@ -13,7 +13,7 @@ import yuri.util.DungeonUtils
 
 /**
  * Tracks dungeon door seal blocks near the player for translucent doors and/or door ESP.
- * Many maps use iron bars; seals also use coal/black concrete, red/brown fills, chiseled stone panels, etc.
+ * Seals use coal block, red concrete/terracotta, chiseled stone bricks, etc.
  */
 object DungeonDoorTracker {
     private const val SCAN_INTERVAL_TICKS: Int = 20
@@ -24,32 +24,12 @@ object DungeonDoorTracker {
     private var ticksUntilScan: Int = 0
     private var eventsRegistered: Boolean = false
 
-    /** Solid fills and bars used as dungeon door seals (within scan radius only). */
+    /** Solid fills used as dungeon door seals (within scan radius only). */
     private val trackedDoorBlocks: Set<Block> = setOf(
-        Blocks.IRON_BARS,
-        Blocks.IRON_BLOCK,
         Blocks.COAL_BLOCK,
-        Blocks.BLACK_CONCRETE,
-        Blocks.BLACK_CONCRETE_POWDER,
-        Blocks.BLACK_WOOL,
         Blocks.RED_CONCRETE,
-        Blocks.RED_WOOL,
-        Blocks.RED_CONCRETE_POWDER,
         Blocks.RED_TERRACOTTA,
-        Blocks.BROWN_CONCRETE,
-        Blocks.BROWN_WOOL,
-        Blocks.BROWN_CONCRETE_POWDER,
-        Blocks.BROWN_TERRACOTTA,
-        Blocks.TERRACOTTA,
-        Blocks.NETHER_WART_BLOCK,
-        Blocks.CHISELED_STONE_BRICKS,
-        Blocks.CHISELED_DEEPSLATE,
-        Blocks.CHISELED_POLISHED_BLACKSTONE,
-        Blocks.CHISELED_NETHER_BRICKS,
-        Blocks.CHISELED_TUFF,
-        Blocks.CHISELED_TUFF_BRICKS,
-        Blocks.CHISELED_RED_SANDSTONE,
-        Blocks.CHISELED_SANDSTONE
+        Blocks.CHISELED_STONE_BRICKS
     )
 
     @JvmStatic

@@ -1070,7 +1070,7 @@ public final class YuriScreen extends Screen {
         int previewRowTop = mobEspColorPreviewTop(top);
         int previewRowBottom = previewRowTop + 18;
         graphics.fill(innerLeft, previewRowTop, innerRight, previewRowBottom, 0x660A0D12);
-        graphics.drawString(font, "Glow Color", left + 14, previewRowTop + 5, TEXT_COLOR, false);
+        graphics.drawString(font, "Hitbox outline", left + 14, previewRowTop + 5, TEXT_COLOR, false);
         graphics.fill(innerRight - 18, previewRowTop + 5, innerRight - 8, previewRowTop + 15, 0xFF0A0C10);
         graphics.fill(innerRight - 17, previewRowTop + 6, innerRight - 9, previewRowTop + 14, MobEspModule.glowColor());
 

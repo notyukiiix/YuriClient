@@ -6,6 +6,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+import net.minecraft.network.protocol.game.ClientboundMapItemDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.world.entity.Entity.RemovalReason;
@@ -16,10 +17,16 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import yuri.data.columns.cheats.modules.MobEspModule;
+import yuri.data.columns.dungeons.map.DungeonMapPacketHook;
 import yuri.data.columns.visual.modules.RenderOptimiserModule;
 
 @Mixin(ClientPacketListener.class)
 public abstract class ClientPacketListenerMixin {
+
+    @Inject(method = "handleMapItemData", at = @At("TAIL"))
+    private void yuri$dungeonMapPacket(ClientboundMapItemDataPacket packet, CallbackInfo ci) {
+        DungeonMapPacketHook.onMapItemData(Minecraft.getInstance(), packet);
+    }
 
     @Inject(method = "handleAddEntity", at = @At("HEAD"), cancellable = true)
     private void yuri$renderOptimiserAddEntity(ClientboundAddEntityPacket packet, CallbackInfo ci) {

@@ -1,0 +1,39 @@
+package yuri.data.columns.cheats.client
+
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext
+import net.minecraft.client.Minecraft
+import net.minecraft.client.renderer.RenderType
+import net.minecraft.client.renderer.ShapeRenderer
+import net.minecraft.world.entity.Entity
+import yuri.data.columns.cheats.modules.MobEspModule
+
+object MobEspWorldRenderer {
+    @JvmStatic
+    fun render(context: WorldRenderContext) {
+        if (!MobEspModule.module.enabled) {
+            return
+        }
+        val mc = Minecraft.getInstance()
+        if (mc.level == null) {
+            return
+        }
+        val matrices = context.matrices() ?: return
+        val buffer = context.consumers().getBuffer(RenderType.lines())
+        val argb = MobEspModule.glowColor()
+        val r = ((argb shr 16) and 0xFF) / 255.0f
+        val g = ((argb shr 8) and 0xFF) / 255.0f
+        val b = (argb and 0xFF) / 255.0f
+        val a = ((argb shr 24) and 0xFF) / 255.0f
+
+        val camPos = mc.gameRenderer.mainCamera.position
+        matrices.pushPose()
+        matrices.translate(-camPos.x.toFloat(), -camPos.y.toFloat(), -camPos.z.toFloat())
+
+        MobEspModule.forEachEspTarget { entity: Entity ->
+            val box = entity.boundingBox
+            ShapeRenderer.renderLineBox(matrices.last(), buffer, box, r, g, b, a)
+        }
+
+        matrices.popPose()
+    }
+}

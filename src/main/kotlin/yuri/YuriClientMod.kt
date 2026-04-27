@@ -19,7 +19,13 @@ import yuri.data.columns.cheats.DungeonDoorTracker
 import yuri.data.columns.cheats.modules.DoorEspModule
 import yuri.data.columns.cheats.modules.MobEspModule
 import yuri.data.columns.dungeons.DungeonDoorChatState
+import yuri.data.columns.dungeons.map.handlers.ScoreCalculation
+import yuri.data.columns.dungeons.modules.DungeonMapModule
 import yuri.data.columns.dungeons.modules.KeyHighlightModule
+import yuri.data.columns.dungeons.client.YuriDungeonListener
+import yuri.data.columns.dungeons.waypoints.DungeonWaypoints
+import yuri.data.columns.visual.modules.YuriHudMetricsModule
+import yuri.data.columns.visual.modules.YuriVisualBundleModule
 import yuri.data.columns.general.modules.ChatModule
 import yuri.data.columns.dev.modules.OpsecModule
 import yuri.data.columns.visual.modules.FullbrightModule
@@ -37,6 +43,12 @@ class YuriClientMod : ClientModInitializer {
         DungeonDoorTracker.registerEvents()
         DoorEspModule.registerEvents()
         KeyHighlightModule.registerEvents()
+        DungeonMapModule.registerEvents()
+        YuriDungeonListener.registerEvents()
+        DungeonWaypoints.registerEvents()
+        ScoreCalculation.registerEvents()
+        YuriHudMetricsModule.registerEvents()
+        YuriVisualBundleModule.registerEvents()
 
         ClientLifecycleEvents.CLIENT_STARTED.register {
             ImageHudModule.reloadTexture()
