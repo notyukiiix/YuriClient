@@ -8,6 +8,21 @@ import yuri.data.columns.cheats.modules.TranslucentDoorModule
  * [TranslucentBlocks] without solo-only gating).
  */
 object TranslucentDoorEffects {
+    private val putQuadBlockPos: ThreadLocal<BlockPos?> = ThreadLocal.withInitial { null }
+
+    @JvmStatic
+    fun beginPutQuadBlockPos(pos: BlockPos) {
+        putQuadBlockPos.set(pos)
+    }
+
+    @JvmStatic
+    fun endPutQuadBlockPos() {
+        putQuadBlockPos.remove()
+    }
+
+    @JvmStatic
+    fun putQuadBlockPos(): BlockPos? = putQuadBlockPos.get()
+
     @JvmStatic
     fun getBlockAlpha(pos: BlockPos): Int {
         if (!TranslucentDoorModule.isActive()) {

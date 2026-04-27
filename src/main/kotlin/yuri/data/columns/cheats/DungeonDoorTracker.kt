@@ -6,11 +6,12 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
+import yuri.data.columns.cheats.modules.DoorEspModule
 import yuri.data.columns.cheats.modules.TranslucentDoorModule
 import yuri.util.DungeonUtils
 
 /**
- * Tracks iron-bar dungeon door voxels near the player while the translucent-door cheat is on.
+ * Tracks iron-bar dungeon door voxels near the player for translucent doors and/or door ESP.
  */
 object DungeonDoorTracker {
     private const val SCAN_INTERVAL_TICKS: Int = 20
@@ -28,13 +29,21 @@ object DungeonDoorTracker {
     fun isDoor(pos: BlockPos): Boolean = doorBlockPackedPositions.contains(pos.asLong())
 
     @JvmStatic
+    fun forEachDoorPacked(consumer: java.util.function.LongConsumer) {
+        doorBlockPackedPositions.forEach(consumer)
+    }
+
+    @JvmStatic
     fun registerEvents() {
         if (eventsRegistered) {
             return
         }
         eventsRegistered = true
         ClientTickEvents.END_CLIENT_TICK.register { client ->
-            if (!TranslucentDoorModule.module.enabled || !DungeonUtils.inDungeons()) {
+            val needScan =
+                DungeonUtils.inDungeons() &&
+                    (TranslucentDoorModule.module.enabled || DoorEspModule.module.enabled)
+            if (!needScan) {
                 doorBlockPackedPositions.clear()
                 ticksUntilScan = 0
                 return@register

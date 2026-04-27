@@ -21,6 +21,7 @@
     "ItemInHandRendererMixin",
     "LivingEntityMixin",
     "LivingEntityRendererMixin",
+    "LightTextureMixin",
     "ModelBlockRendererMixin",
     "ParticleEngineMixin",
     "PlayerMixin",

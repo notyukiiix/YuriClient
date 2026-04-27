@@ -1,6 +1,7 @@
 package yuri.data.columns.cheats
 
 import yuri.YuriData
+import yuri.data.columns.cheats.modules.DoorEspModule
 import yuri.data.columns.cheats.modules.MobEspModule
 import yuri.data.columns.cheats.modules.TranslucentDoorModule
 
@@ -11,6 +12,7 @@ object CheatsColumn {
         914,
         42,
         MobEspModule.module,
-        TranslucentDoorModule.module
+        TranslucentDoorModule.module,
+        DoorEspModule.module
     )
 }

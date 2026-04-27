@@ -2,7 +2,6 @@ package yuri.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
@@ -14,11 +13,29 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import com.llamalad7.mixinextras.sugar.Local;
 import yuri.data.columns.cheats.TranslucentDoorEffects;
 
 @Mixin(ModelBlockRenderer.class)
 public class ModelBlockRendererMixin {
+
+    @Inject(
+        method = "putQuadData(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;Lnet/minecraft/client/renderer/block/ModelBlockRenderer$CommonRenderStorage;I)V",
+        at = @At("HEAD")
+    )
+    private void yuri$capturePutQuadPos(CallbackInfo ci, @Local(argsOnly = true, ordinal = 2) BlockPos pos) {
+        TranslucentDoorEffects.beginPutQuadBlockPos(pos);
+    }
+
+    @Inject(
+        method = "putQuadData(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;Lnet/minecraft/client/renderer/block/ModelBlockRenderer$CommonRenderStorage;I)V",
+        at = @At("TAIL")
+    )
+    private void yuri$clearPutQuadPos(CallbackInfo ci) {
+        TranslucentDoorEffects.endPutQuadBlockPos();
+    }
 
     @Inject(
         method = "shouldRenderFace(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;ZLnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z",
@@ -66,9 +83,13 @@ public class ModelBlockRendererMixin {
         int[] lightmap,
         int packed,
         boolean shade,
-        Operation<Void> original,
-        @Local BlockPos pos
+        Operation<Void> original
     ) {
+        BlockPos pos = TranslucentDoorEffects.putQuadBlockPos();
+        if (pos == null) {
+            original.call(consumer, pose, quad, brightness, red, green, blue, alpha, lightmap, packed, shade);
+            return;
+        }
         float m = TranslucentDoorEffects.shouldTintDoorBlock(pos)
             ? TranslucentDoorEffects.doorTintMultiplier()
             : 1.0f;

@@ -16,7 +16,10 @@ import yuri.client.CustomScoreboardHudLayer
 import yuri.client.ImageHudHudLayer
 import yuri.client.ShortCommandHelper
 import yuri.data.columns.cheats.DungeonDoorTracker
+import yuri.data.columns.cheats.modules.DoorEspModule
 import yuri.data.columns.cheats.modules.MobEspModule
+import yuri.data.columns.dungeons.DungeonDoorChatState
+import yuri.data.columns.dungeons.modules.KeyHighlightModule
 import yuri.data.columns.general.modules.ChatModule
 import yuri.data.columns.dev.modules.OpsecModule
 import yuri.data.columns.visual.modules.FullbrightModule
@@ -30,7 +33,10 @@ class YuriClientMod : ClientModInitializer {
         ImageHudHudLayer.register()
         CustomScoreboardHudLayer.register()
         MobEspModule.registerEvents()
+        DungeonDoorChatState.registerEvents()
         DungeonDoorTracker.registerEvents()
+        DoorEspModule.registerEvents()
+        KeyHighlightModule.registerEvents()
 
         ClientLifecycleEvents.CLIENT_STARTED.register {
             ImageHudModule.reloadTexture()

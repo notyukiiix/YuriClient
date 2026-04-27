@@ -5,6 +5,7 @@ import net.fabricmc.loader.api.FabricLoader
 import yuri.data.columns.general.modules.ChatModule
 import yuri.data.columns.dev.modules.CustomScoreboardModule
 import yuri.data.columns.dev.modules.OpsecModule
+import yuri.data.columns.cheats.modules.DoorEspModule
 import yuri.data.columns.cheats.modules.MobEspModule
 import yuri.data.columns.cheats.modules.TranslucentDoorModule
 import yuri.data.columns.visual.modules.ImageHudModule
@@ -173,6 +174,8 @@ object YuriConfig {
             MobEspModule.setEnabled(optionIndex, raw.trim().toBoolean())
         }
         MobEspModule.trySetGlowColor(properties.getProperty("mob_esp.color", MobEspModule.glowColorHex()))
+        DoorEspModule.trySetOutlineColor(properties.getProperty("door_esp.outline", DoorEspModule.outlineColorHex()))
+        DoorEspModule.trySetOpenableColor(properties.getProperty("door_esp.openable", DoorEspModule.openableColorHex()))
         TranslucentDoorModule.setDoorsAlpha(
             getInt(properties, "translucent_door.alpha", TranslucentDoorModule.defaultDoorAlpha())
         )
@@ -267,6 +270,8 @@ object YuriConfig {
             properties.setProperty("mob_esp.$optionIndex", MobEspModule.isEnabled(optionIndex).toString())
         }
         properties.setProperty("mob_esp.color", MobEspModule.glowColorHex())
+        properties.setProperty("door_esp.outline", DoorEspModule.outlineColorHex())
+        properties.setProperty("door_esp.openable", DoorEspModule.openableColorHex())
         properties.setProperty("translucent_door.alpha", TranslucentDoorModule.doorsAlpha().toString())
         properties.setProperty("opsec.name_change", OpsecModule.nameChange.trim())
         properties.setProperty("custom_scoreboard.x", CustomScoreboardModule.hudX.toString())

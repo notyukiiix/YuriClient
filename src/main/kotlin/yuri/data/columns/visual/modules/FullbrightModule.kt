@@ -14,6 +14,9 @@ object FullbrightModule {
     @JvmField
     val module: YuriData.Module = YuriData.Module(TITLE)
 
+    @JvmStatic
+    fun isEnabled(): Boolean = module.enabled
+
     private var lastEnabled: Boolean = false
 
     @JvmStatic
