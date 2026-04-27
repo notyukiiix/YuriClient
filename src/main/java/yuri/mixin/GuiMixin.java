@@ -1,8 +1,9 @@
 package yuri.mixin;
 
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.world.scores.Objective;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,6 +23,27 @@ public abstract class GuiMixin {
     @Inject(method = "renderOverlayMessage", at = @At("HEAD"), cancellable = true)
     private void yuri$hideActionBarHud(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         if (RenderOptimiserModule.shouldHideActionBarHud()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderPlayerHealth", at = @At("HEAD"), cancellable = true)
+    private static void yuri$hidePlayerHealthHud(GuiGraphics graphics, CallbackInfo ci) {
+        if (RenderOptimiserModule.shouldHideHealthArmourHud()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderArmor", at = @At("HEAD"), cancellable = true)
+    private static void yuri$hideArmorHud(GuiGraphics graphics, Player player, int y, int x, int width, int lines, CallbackInfo ci) {
+        if (RenderOptimiserModule.shouldHideHealthArmourHud()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderFood", at = @At("HEAD"), cancellable = true)
+    private static void yuri$hideFoodHud(GuiGraphics graphics, Player player, int y, int x, CallbackInfo ci) {
+        if (RenderOptimiserModule.shouldHideHealthArmourHud()) {
             ci.cancel();
         }
     }

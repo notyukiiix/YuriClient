@@ -18,8 +18,9 @@ import kotlin.math.min
 object CustomScoreboardModule {
     private const val TITLE = "Custom Scoreboard"
     private const val OPTION_HIDE_SERVER_ID = 0
-    private val SERVER_ID_REGEX = Regex("(?i)\\bm\\d{1,3}[a-z]{2}\\b")
-    private val SERVER_ID_END_REGEX = Regex("(?i)\\s+m\\d{1,3}[a-z]{1,3}\\s*$")
+    // Common Hypixel server-id formats seen on scoreboards/forums: mini181T, mini65T, m151A.
+    private val SERVER_ID_TOKEN_REGEX = Regex("(?i)\\b(?:mini|m)\\d{1,4}[a-z]{0,2}\\b")
+    private val SERVER_ID_END_REGEX = Regex("(?i)\\s+(?:mini|m)\\d{1,4}[a-z]{0,2}[)\\]]?\\s*$")
 
     @JvmField
     val module: YuriData.Module = YuriData.Module(TITLE)
@@ -209,9 +210,9 @@ object CustomScoreboardModule {
     }
 
     private fun stripServerId(input: String): String {
-        // Some Hypixel scoreboards append the server id as the final token on the date line (e.g. " ... m151A").
+        // Hypixel commonly appends a server-id token on the date line, often as the final token.
         var line = SERVER_ID_END_REGEX.replace(input, "")
-        line = SERVER_ID_REGEX.replace(line, "")
+        line = SERVER_ID_TOKEN_REGEX.replace(line, "")
         return line.replace(Regex("\\s{2,}"), " ").trim()
     }
 

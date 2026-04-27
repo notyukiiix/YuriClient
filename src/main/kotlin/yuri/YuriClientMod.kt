@@ -15,8 +15,11 @@ import yuri.client.ChatCopyHelper
 import yuri.client.CustomScoreboardHudLayer
 import yuri.client.ImageHudHudLayer
 import yuri.client.ShortCommandHelper
+import yuri.data.columns.cheats.DungeonDoorTracker
+import yuri.data.columns.cheats.modules.MobEspModule
 import yuri.data.columns.general.modules.ChatModule
 import yuri.data.columns.dev.modules.OpsecModule
+import yuri.data.columns.visual.modules.FullbrightModule
 import yuri.data.columns.visual.modules.ImageHudModule
 import yuri.data.columns.general.modules.SillySpeakModule
 
@@ -26,6 +29,8 @@ class YuriClientMod : ClientModInitializer {
         YuriConfig.load()
         ImageHudHudLayer.register()
         CustomScoreboardHudLayer.register()
+        MobEspModule.registerEvents()
+        DungeonDoorTracker.registerEvents()
 
         ClientLifecycleEvents.CLIENT_STARTED.register {
             ImageHudModule.reloadTexture()
@@ -33,6 +38,7 @@ class YuriClientMod : ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             GlobalCosmetics.refreshResolvedNames(client)
+            FullbrightModule.onClientTick(client)
             while (OPEN_GUI_KEY.consumeClick()) {
                 openGui(client)
             }
@@ -75,6 +81,7 @@ class YuriClientMod : ClientModInitializer {
 
         ClientSendMessageEvents.ALLOW_COMMAND.register { command ->
             val trimmed = command?.trim().orEmpty()
+            val body = normalizedOutgoingCommandBody(command)
             if (ChatModule.shouldShortCommands()) {
                 val rewritten = ShortCommandHelper.rewriteShortCommand(trimmed)
                 if (rewritten != null && !rewritten.equals(trimmed, ignoreCase = true)) {
@@ -86,17 +93,25 @@ class YuriClientMod : ClientModInitializer {
                     return@register false
                 }
             }
-            if (trimmed.equals("/yuri hud", ignoreCase = true) || trimmed.equals("yuri hud", ignoreCase = true)) {
-                val mc = Minecraft.getInstance()
-                mc.execute { mc.setScreen(YuriHudEditScreen(mc.screen)) }
+            if (isYuriHudCommand(body)) {
+                openYuriHudEditor()
                 return@register false
             }
-            if (!isYuriCommand(command)) {
+            if (!isYuriCommand(body)) {
                 return@register true
             }
 
             queueOpenGui()
             false
+        }
+
+        ClientSendMessageEvents.ALLOW_CHAT.register { message ->
+            val body = normalizedOutgoingCommandBody(message)
+            if (isYuriHudCommand(body)) {
+                openYuriHudEditor()
+                return@register false
+            }
+            true
         }
 
         ClientSendMessageEvents.MODIFY_CHAT.register { message ->
@@ -116,9 +131,30 @@ class YuriClientMod : ClientModInitializer {
 
         private var chatCopyRightMouseWasDown: Boolean = false
 
-        private fun isYuriCommand(command: String?): Boolean {
-            val trimmed = command?.trim().orEmpty()
-            return trimmed.equals("yuri", ignoreCase = true) || trimmed.lowercase().startsWith("yuri ")
+        private val commandWhitespaceRegex = Regex("\\s+")
+
+        private fun normalizedOutgoingCommandBody(command: String?): String {
+            if (command.isNullOrBlank()) {
+                return ""
+            }
+            return command.trim()
+                .removePrefix("/")
+                .replace(commandWhitespaceRegex, " ")
+                .lowercase()
+        }
+
+        private fun isYuriHudCommand(normalizedBodyLowercase: String): Boolean {
+            return normalizedBodyLowercase == "yuri hud" ||
+                normalizedBodyLowercase.startsWith("yuri hud ")
+        }
+
+        private fun isYuriCommand(normalizedBodyLowercase: String): Boolean {
+            return normalizedBodyLowercase == "yuri" || normalizedBodyLowercase.startsWith("yuri ")
+        }
+
+        private fun openYuriHudEditor() {
+            val mc = Minecraft.getInstance()
+            mc.setScreen(YuriHudEditScreen(mc.screen))
         }
 
         private fun queueOpenGui() {

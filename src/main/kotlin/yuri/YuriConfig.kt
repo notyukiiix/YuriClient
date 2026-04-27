@@ -6,6 +6,7 @@ import yuri.data.columns.general.modules.ChatModule
 import yuri.data.columns.dev.modules.CustomScoreboardModule
 import yuri.data.columns.dev.modules.OpsecModule
 import yuri.data.columns.cheats.modules.MobEspModule
+import yuri.data.columns.cheats.modules.TranslucentDoorModule
 import yuri.data.columns.visual.modules.ImageHudModule
 import yuri.data.columns.visual.modules.RenderOptimiserModule
 import java.io.IOException
@@ -23,7 +24,7 @@ object YuriConfig {
      * Format 1: legacy three General modules (indices 0–2) and eleven Render Optimiser rows (0–10).
      */
     private const val CONFIG_FORMAT_KEY = "config.format"
-    private const val CURRENT_CONFIG_FORMAT = 4
+    private const val CURRENT_CONFIG_FORMAT = 5
 
     @JvmStatic
     fun load() {
@@ -133,6 +134,18 @@ object YuriConfig {
                 properties.getProperty("render_optimiser.12")?.let {
                     RenderOptimiserModule.setEnabled(RenderOptimiserModule.IDX_HIDE_EFFECTS_HUD, it.trim().toBoolean())
                 }
+            } else if (storedConfigFormat == 4) {
+                // Format 4: indices 0–9 unchanged; 10 actionbar; 11 effects.
+                for (i in 0..9) {
+                    val raw = properties.getProperty("render_optimiser.$i") ?: continue
+                    RenderOptimiserModule.setEnabled(i, raw.trim().toBoolean())
+                }
+                properties.getProperty("render_optimiser.10")?.let {
+                    RenderOptimiserModule.setEnabled(RenderOptimiserModule.IDX_HIDE_ACTIONBAR_HUD, it.trim().toBoolean())
+                }
+                properties.getProperty("render_optimiser.11")?.let {
+                    RenderOptimiserModule.setEnabled(RenderOptimiserModule.IDX_HIDE_EFFECTS_HUD, it.trim().toBoolean())
+                }
             } else {
                 for (optionIndex in 0 until RenderOptimiserModule.optionCount()) {
                     val key = "render_optimiser.$optionIndex"
@@ -160,6 +173,9 @@ object YuriConfig {
             MobEspModule.setEnabled(optionIndex, raw.trim().toBoolean())
         }
         MobEspModule.trySetGlowColor(properties.getProperty("mob_esp.color", MobEspModule.glowColorHex()))
+        TranslucentDoorModule.setDoorsAlpha(
+            getInt(properties, "translucent_door.alpha", TranslucentDoorModule.defaultDoorAlpha())
+        )
         OpsecModule.nameChange = properties.getProperty("opsec.name_change", "").trim()
         CustomScoreboardModule.hudX = getInt(properties, "custom_scoreboard.x", CustomScoreboardModule.hudX)
         CustomScoreboardModule.hudY = getInt(properties, "custom_scoreboard.y", CustomScoreboardModule.hudY)
@@ -251,6 +267,7 @@ object YuriConfig {
             properties.setProperty("mob_esp.$optionIndex", MobEspModule.isEnabled(optionIndex).toString())
         }
         properties.setProperty("mob_esp.color", MobEspModule.glowColorHex())
+        properties.setProperty("translucent_door.alpha", TranslucentDoorModule.doorsAlpha().toString())
         properties.setProperty("opsec.name_change", OpsecModule.nameChange.trim())
         properties.setProperty("custom_scoreboard.x", CustomScoreboardModule.hudX.toString())
         properties.setProperty("custom_scoreboard.y", CustomScoreboardModule.hudY.toString())

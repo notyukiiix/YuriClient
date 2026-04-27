@@ -31,21 +31,23 @@ object RenderOptimiserModule {
         "Hide Soul Weaver",
         "Hide Tentacle Head",
         "Hide Fire Overlay",
+        "Hide Health/Armour",
         "Hide Actionbar",
         "Hide Effects"
     )
 
     private val toggles: BooleanArray = booleanArrayOf(
-        true,
-        true,
-        true,
-        true,
         false,
         false,
-        true,
-        true,
-        true,
-        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
         false,
         false
     )
@@ -60,8 +62,9 @@ object RenderOptimiserModule {
     const val IDX_HIDE_SOUL_WEAVER: Int = 7
     const val IDX_HIDE_TENTACLE_HEAD: Int = 8
     const val IDX_HIDE_FIRE_OVERLAY: Int = 9
-    const val IDX_HIDE_ACTIONBAR_HUD: Int = 10
-    const val IDX_HIDE_EFFECTS_HUD: Int = 11
+    const val IDX_HIDE_HEALTH_ARMOUR_HUD: Int = 10
+    const val IDX_HIDE_ACTIONBAR_HUD: Int = 11
+    const val IDX_HIDE_EFFECTS_HUD: Int = 12
 
     const val TENTACLE_TEXTURE: String =
         "ewogICJ0aW1lc3RhbXAiIDogMTcxOTg1NzI3NzI0OSwKICAicHJvZmlsZUlkIiA6ICIxODA1Y2E2MmM0ZDI0M2NiOWQxYmY4YmM5N2E1YjgyNCIsCiAgInByb2ZpbGVOYW1lIiA6ICJSdWxsZWQiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzdkODM2NzQ5MjZiODk3MTRlNmI1YTU1NDcwNTAxYzA0YjA2NmRkODdiZjZjMzM1Y2RkYzZlNjBhMWExYTVmNSIKICAgIH0KICB9Cn0="
@@ -93,6 +96,9 @@ object RenderOptimiserModule {
 
     @JvmStatic
     fun shouldDisableFireOverlay(): Boolean = isModuleActive() && isEnabled(IDX_HIDE_FIRE_OVERLAY)
+
+    @JvmStatic
+    fun shouldHideHealthArmourHud(): Boolean = isModuleActive() && isEnabled(IDX_HIDE_HEALTH_ARMOUR_HUD)
 
     @JvmStatic
     fun shouldHideActionBarHud(): Boolean = isModuleActive() && isEnabled(IDX_HIDE_ACTIONBAR_HUD)

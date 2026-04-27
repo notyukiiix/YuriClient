@@ -23,7 +23,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import yuri.data.columns.general.modules.ChatModule;
 import yuri.data.columns.cheats.modules.MobEspModule;
-import yuri.data.columns.dev.modules.CustomScoreboardModule;
+import yuri.data.columns.cheats.modules.TranslucentDoorModule;
 import yuri.data.columns.dev.modules.OpsecModule;
 import yuri.data.columns.visual.modules.ImageHudModule;
 import yuri.data.columns.visual.modules.RenderOptimiserModule;
@@ -61,7 +61,8 @@ public final class YuriScreen extends Screen {
     private static final int RENDER_OPTIMISER_POPUP_WIDTH = 248;
     private static final int RENDER_OPTIMISER_POPUP_HEIGHT = 232;
     private static final int IMAGE_HUD_POPUP_WIDTH = 260;
-    private static final int IMAGE_HUD_POPUP_HEIGHT = 124;
+    private static final int IMAGE_HUD_POPUP_HEIGHT_COLLAPSED = 88;
+    private static final int IMAGE_HUD_POPUP_HEIGHT_EXPANDED = 124;
     /** Vertical layout inside Image HUD popup (offsets from popup top). */
     private static final int IMAGE_HUD_LABEL_TOP = 20;
     private static final int IMAGE_HUD_PATH_TOP = 32;
@@ -71,7 +72,6 @@ public final class YuriScreen extends Screen {
     private static final int IMAGE_HUD_PENDING_NAME_TOP = 81;
     private static final int IMAGE_HUD_PENDING_BUTTON_TOP = 94;
     private static final int IMAGE_HUD_PENDING_BUTTON_HEIGHT = 16;
-    private static final int IMAGE_HUD_HINT_TOP_NO_PENDING = 70;
     private static final int RENDER_OPTIMISER_ROW_HEIGHT = 18;
     private static final int CHAT_POPUP_WIDTH = 248;
     private static final int CHAT_POPUP_HEIGHT = 96;
@@ -83,10 +83,10 @@ public final class YuriScreen extends Screen {
     private static final int MOB_ESP_GAP_BELOW_PICKER = 8;
     private static final int MOB_ESP_HEX_ROW_HEIGHT = 22;
     private static final int MOB_ESP_HEX_FIELD_INSET = 16;
+    private static final int TRANSLUCENT_DOOR_POPUP_WIDTH = 236;
+    private static final int TRANSLUCENT_DOOR_POPUP_HEIGHT = 96;
     private static final int OPSEC_POPUP_WIDTH = 248;
     private static final int OPSEC_POPUP_HEIGHT = 78;
-    private static final int CUSTOM_SCOREBOARD_POPUP_WIDTH = 248;
-    private static final int CUSTOM_SCOREBOARD_POPUP_HEIGHT = 96;
     private static final int CHAT_ROW_HEIGHT = 18;
     private static final int SLIDER_ROW_STEP = 22;
     private static final int SLIDER_BAR_HEIGHT = 4;
@@ -143,12 +143,12 @@ public final class YuriScreen extends Screen {
     private int chatPopupHeight = CHAT_POPUP_HEIGHT;
     private int mobEspPopupWidth = MOB_ESP_POPUP_WIDTH;
     private int mobEspPopupHeight = MOB_ESP_POPUP_HEIGHT;
+    private int translucentDoorPopupWidth = TRANSLUCENT_DOOR_POPUP_WIDTH;
+    private int translucentDoorPopupHeight = TRANSLUCENT_DOOR_POPUP_HEIGHT;
     private int opsecPopupWidth = OPSEC_POPUP_WIDTH;
     private int opsecPopupHeight = OPSEC_POPUP_HEIGHT;
-    private int customScoreboardPopupWidth = CUSTOM_SCOREBOARD_POPUP_WIDTH;
-    private int customScoreboardPopupHeight = CUSTOM_SCOREBOARD_POPUP_HEIGHT;
     private int imageHudPopupWidth = IMAGE_HUD_POPUP_WIDTH;
-    private int imageHudPopupHeight = IMAGE_HUD_POPUP_HEIGHT;
+    private int imageHudPopupHeight = IMAGE_HUD_POPUP_HEIGHT_COLLAPSED;
     private int renderOptimiserScroll;
     private boolean columnsInitialized;
 
@@ -249,6 +249,11 @@ public final class YuriScreen extends Screen {
                 YuriConfig.save();
                 return true;
             }
+            if (activePopup == PopupType.TRANSLUCENT_DOOR && event.button() == 0 && isInsideTranslucentDoorResetButton(event.x(), event.y())) {
+                TranslucentDoorModule.resetDoorAlphaToDefault();
+                YuriConfig.save();
+                return true;
+            }
 
             if (activePopup == PopupType.CLICK_GUI && waitingForOpenKeyBind) {
                 if (event.button() == 0 && isInsideRebindButton(event.x(), event.y())) {
@@ -306,6 +311,13 @@ public final class YuriScreen extends Screen {
                     return true;
                 }
             }
+            if (activePopup == PopupType.TRANSLUCENT_DOOR && event.button() == 0) {
+                if (isInsideTranslucentDoorSlider(event.x(), event.y())) {
+                    draggingSliderIndex = 0;
+                    setTranslucentDoorSliderValue(event.x());
+                    return true;
+                }
+            }
             if (activePopup == PopupType.RENDER_OPTIMISER && event.button() == 0) {
                 int optionIndex = getHoveredRenderOptimiserOption(event.x(), event.y());
                 if (optionIndex >= 0) {
@@ -334,14 +346,6 @@ public final class YuriScreen extends Screen {
                 int optionIndex = getHoveredMobEspOption(event.x(), event.y());
                 if (optionIndex >= 0) {
                     MobEspModule.toggle(optionIndex);
-                    return true;
-                }
-            }
-            if (activePopup == PopupType.CUSTOM_SCOREBOARD && event.button() == 0) {
-                int optionIndex = getHoveredCustomScoreboardOption(event.x(), event.y());
-                if (optionIndex >= 0) {
-                    CustomScoreboardModule.toggle(optionIndex);
-                    YuriConfig.save();
                     return true;
                 }
             }
@@ -439,12 +443,12 @@ public final class YuriScreen extends Screen {
                     openPopup(PopupType.MOB_ESP);
                     return true;
                 }
-                if (isOpsecModule(moduleHit.module)) {
-                    openPopup(PopupType.OPSEC);
+                if (isTranslucentDoorModule(moduleHit.module)) {
+                    openPopup(PopupType.TRANSLUCENT_DOOR);
                     return true;
                 }
-                if (isCustomScoreboardModule(moduleHit.module)) {
-                    openPopup(PopupType.CUSTOM_SCOREBOARD);
+                if (isOpsecModule(moduleHit.module)) {
+                    openPopup(PopupType.OPSEC);
                     return true;
                 }
                 if (isImageHudModule(moduleHit.module)) {
@@ -476,9 +480,6 @@ public final class YuriScreen extends Screen {
             return true;
         }
         if (activePopup == PopupType.OPSEC && isInsidePopup(mouseX, mouseY)) {
-            return true;
-        }
-        if (activePopup == PopupType.CUSTOM_SCOREBOARD && isInsidePopup(mouseX, mouseY)) {
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
@@ -534,6 +535,10 @@ public final class YuriScreen extends Screen {
         }
         if (activePopup == PopupType.PLAYER_SIZE && draggingSliderIndex >= 0 && event.button() == 0) {
             setPlayerSizeSliderValue(draggingSliderIndex, event.x());
+            return true;
+        }
+        if (activePopup == PopupType.TRANSLUCENT_DOOR && draggingSliderIndex >= 0 && event.button() == 0) {
+            setTranslucentDoorSliderValue(event.x());
             return true;
         }
         if (draggingPopup && event.button() == 0) {
@@ -734,10 +739,12 @@ public final class YuriScreen extends Screen {
             graphics.fill(right - 1, top, right, bottom, YuriTheme.columnBorder());
             graphics.fill(left, bottom - 1, right, bottom, YuriTheme.columnBorder());
             graphics.drawString(font, headerHovered || (interactive && draggingPopup) ? "Drag" : "Move", right - 44, top + 5, MUTED_TEXT_COLOR, false);
-            if (popupType == PopupType.ANIMATIONS || popupType == PopupType.PLAYER_SIZE) {
+            if (popupType == PopupType.ANIMATIONS || popupType == PopupType.PLAYER_SIZE || popupType == PopupType.TRANSLUCENT_DOOR) {
                 boolean resetHovered = interactive && (popupType == PopupType.ANIMATIONS
                     ? isInsideAnimationResetButton(mouseX, mouseY)
-                    : isInsidePlayerSizeResetButton(mouseX, mouseY));
+                    : popupType == PopupType.PLAYER_SIZE
+                        ? isInsidePlayerSizeResetButton(mouseX, mouseY)
+                        : isInsideTranslucentDoorResetButton(mouseX, mouseY));
                 renderPopupResetButton(graphics, left, top, right, resetHovered);
             }
             graphics.drawString(font, "x", right - 12, top + 5, interactive && isInsidePopupClose(mouseX, mouseY) ? YuriTheme.accent() : TEXT_COLOR, false);
@@ -754,10 +761,10 @@ public final class YuriScreen extends Screen {
                 renderChatPopup(graphics, left, top);
             } else if (popupType == PopupType.MOB_ESP) {
                 renderMobEspPopup(graphics, left, top);
+            } else if (popupType == PopupType.TRANSLUCENT_DOOR) {
+                renderTranslucentDoorPopup(graphics, left, top);
             } else if (popupType == PopupType.OPSEC) {
                 renderOpsecPopup(graphics, left, top);
-            } else if (popupType == PopupType.CUSTOM_SCOREBOARD) {
-                renderCustomScoreboardPopup(graphics, left, top);
             } else if (popupType == PopupType.IMAGE_HUD) {
                 renderImageHudPopup(graphics, left, top, mouseX, mouseY);
             }
@@ -1081,6 +1088,38 @@ public final class YuriScreen extends Screen {
         graphics.fill(hexFieldLeft, hexFieldTop, hexFieldRight, hexFieldBottom, YuriTheme.subGuiInput());
     }
 
+    private void renderTranslucentDoorPopup(GuiGraphics graphics, int left, int top) {
+        graphics.drawString(font, "Translucent Door", left + 8, top + 5, YuriTheme.accent(), false);
+        int popupWidth = getPopupWidth();
+        graphics.fill(left + 10, top + 24, left + popupWidth - 10, top + getPopupHeight() - 12, 0x660A0D12);
+        renderTranslucentDoorSlider(graphics, left, top, TranslucentDoorModule.doorsAlpha());
+    }
+
+    private void renderTranslucentDoorSlider(GuiGraphics graphics, int popupLeft, int popupTop, int value) {
+        int rowTop = popupTop + 34;
+        int sliderLeft = popupLeft + 30;
+        int sliderWidth = getPopupWidth() - 60;
+        int sliderRight = sliderLeft + sliderWidth;
+        int barTop = rowTop + 11;
+        int barBottom = barTop + SLIDER_BAR_HEIGHT;
+        float ratio = normalize(value, 0.0F, 255.0F);
+        int fillRight = sliderLeft + Math.round(sliderWidth * ratio);
+        fillRight = clamp(fillRight, sliderLeft, sliderRight);
+        int textY = rowTop + 2;
+        String valueText = Integer.toString(value);
+        int valueX = sliderRight - font.width(valueText);
+        int labelX = sliderLeft;
+        int labelY = barTop - font.lineHeight - 1;
+
+        graphics.drawString(font, "Alpha", labelX, labelY, TEXT_COLOR, false);
+        graphics.drawString(font, valueText, valueX, textY, YuriTheme.accent(), false);
+        graphics.fill(sliderLeft, barTop, sliderRight, barBottom, 0xAA0A0D12);
+        graphics.fill(sliderLeft, barTop, fillRight, barBottom, YuriTheme.accentSoft());
+        graphics.fill(sliderLeft, barTop, sliderRight, barTop + 1, YuriTheme.columnBorder());
+        graphics.fill(sliderLeft, barBottom - 1, sliderRight, barBottom, YuriTheme.columnBorder());
+        graphics.fill(fillRight - 1, barTop - 2, fillRight + 1, barBottom + 2, YuriTheme.accent());
+    }
+
     private void renderOpsecPopup(GuiGraphics graphics, int left, int top) {
         graphics.drawString(font, "Name change", left + 8, top + 5, YuriTheme.accent(), false);
         int innerLeft = left + 10;
@@ -1089,29 +1128,6 @@ public final class YuriScreen extends Screen {
         int nameRowBottom = nameRowTop + 20;
         graphics.fill(innerLeft, nameRowTop, innerRight, nameRowBottom, 0x660A0D12);
         graphics.drawString(font, "Client-side only", innerLeft + 4, nameRowBottom + 6, MUTED_TEXT_COLOR, false);
-    }
-
-    private void renderCustomScoreboardPopup(GuiGraphics graphics, int left, int top) {
-        graphics.drawString(font, "Custom Scoreboard", left + 8, top + 5, YuriTheme.accent(), false);
-        int innerLeft = left + 10;
-        int innerRight = left + getPopupWidth() - 10;
-        int rowTop = top + 24;
-        int rowHeight = CHAT_ROW_HEIGHT;
-        int optionCount = CustomScoreboardModule.optionCount();
-        for (int index = 0; index < optionCount; index++) {
-            int topY = rowTop + index * rowHeight;
-            int bottomY = topY + rowHeight;
-            boolean enabled = CustomScoreboardModule.isEnabled(index);
-            int fill = enabled ? YuriTheme.accentSoft() : 0x660A0D12;
-            int border = enabled ? YuriTheme.accent() : YuriTheme.columnBorder();
-            int textColor = enabled ? 0xFF000000 : TEXT_COLOR;
-            graphics.fill(innerLeft, topY, innerRight, bottomY, fill);
-            graphics.fill(innerLeft, topY, innerRight, topY + 1, border);
-            graphics.fill(innerLeft, bottomY - 1, innerRight, bottomY, border);
-            graphics.fill(innerLeft, topY, innerLeft + 1, bottomY, border);
-            graphics.fill(innerRight - 1, topY, innerRight, bottomY, border);
-            graphics.drawString(font, CustomScoreboardModule.optionLabel(index), innerLeft + 6, topY + 5, textColor, false);
-        }
     }
 
     private void renderImageHudPopup(GuiGraphics graphics, int left, int top, int mouseX, int mouseY) {
@@ -1143,8 +1159,6 @@ public final class YuriScreen extends Screen {
             boolean discardHovered = activePopup == PopupType.IMAGE_HUD && isInsideImageHudDiscardPendingButton(mouseX, mouseY);
             drawImageHudTextButton(graphics, addBounds, addHovered, "Add to HUD");
             drawImageHudTextButton(graphics, discardBounds, discardHovered, "Discard");
-        } else {
-            graphics.drawString(font, "Path saves when you change it.", innerLeft, top + IMAGE_HUD_HINT_TOP_NO_PENDING, MUTED_TEXT_COLOR, false);
         }
     }
 
@@ -1221,9 +1235,11 @@ public final class YuriScreen extends Screen {
         }
         if (!ImageHudModule.importImageFromUserSelection(imageHudPendingImportPath)) {
             imageHudPendingImportPath = null;
+            syncImageHudPopupHeight();
             return;
         }
         imageHudPendingImportPath = null;
+        syncImageHudPopupHeight();
         if (imageHudPathInput != null) {
             syncingImageHudPathInput = true;
             imageHudPathInput.setValue(ImageHudModule.getImagePath());
@@ -1237,6 +1253,7 @@ public final class YuriScreen extends Screen {
 
     private void discardImageHudPendingSelection() {
         imageHudPendingImportPath = null;
+        syncImageHudPopupHeight();
     }
 
     private boolean isInsideImageHudBrowseButton(double mouseX, double mouseY) {
@@ -1291,6 +1308,7 @@ public final class YuriScreen extends Screen {
             return;
         }
         imageHudPendingImportPath = full.toAbsolutePath().toString();
+        syncImageHudPopupHeight();
     }
 
     /**
@@ -1539,6 +1557,15 @@ public final class YuriScreen extends Screen {
         return -1;
     }
 
+    private boolean isInsideTranslucentDoorSlider(double mouseX, double mouseY) {
+        int rowTop = popupY + 34;
+        int sliderLeft = popupX + 30;
+        int sliderRight = sliderLeft + getPopupWidth() - 60;
+        int barTop = rowTop + 9;
+        int barBottom = barTop + 8;
+        return mouseX >= sliderLeft && mouseX < sliderRight && mouseY >= barTop - 2 && mouseY < barBottom + 2;
+    }
+
     private int getHoveredRenderOptimiserOption(double mouseX, double mouseY) {
         int left = popupX + 10;
         int right = popupX + getPopupWidth() - 10;
@@ -1596,21 +1623,6 @@ public final class YuriScreen extends Screen {
         int rowBottom = rowTop + CHAT_ROW_HEIGHT;
         if (mouseX >= left && mouseX < right && mouseY >= rowTop && mouseY < rowBottom) {
             return 0;
-        }
-        return -1;
-    }
-
-    private int getHoveredCustomScoreboardOption(double mouseX, double mouseY) {
-        int left = popupX + 10;
-        int right = popupX + getPopupWidth() - 10;
-        int rowStart = popupY + 24;
-        int optionCount = CustomScoreboardModule.optionCount();
-        for (int index = 0; index < optionCount; index++) {
-            int rowTop = rowStart + index * CHAT_ROW_HEIGHT;
-            int rowBottom = rowTop + CHAT_ROW_HEIGHT;
-            if (mouseX >= left && mouseX < right && mouseY >= rowTop && mouseY < rowBottom) {
-                return index;
-            }
         }
         return -1;
     }
@@ -1791,6 +1803,14 @@ public final class YuriScreen extends Screen {
         }
     }
 
+    private void setTranslucentDoorSliderValue(double mouseX) {
+        int sliderLeft = popupX + 30;
+        int sliderWidth = getPopupWidth() - 60;
+        float ratio = (float) ((mouseX - sliderLeft) / (double) sliderWidth);
+        ratio = Math.max(0.0F, Math.min(1.0F, ratio));
+        TranslucentDoorModule.setDoorsAlpha(clamp(Math.round(denormalize(ratio, 0.0F, 255.0F)), 0, 255));
+    }
+
     private boolean isInsideHeader(YuriData.Column column, double mouseX, double mouseY) {
         return mouseX >= column.x && mouseX < column.x + COLUMN_WIDTH && mouseY >= column.y && mouseY < column.y + HEADER_HEIGHT;
     }
@@ -1841,6 +1861,21 @@ public final class YuriScreen extends Screen {
         return mouseX >= resetLeft && mouseX < resetRight && mouseY >= buttonTop && mouseY < resetBottom;
     }
 
+    private boolean isInsideTranslucentDoorResetButton(double mouseX, double mouseY) {
+        if (activePopup != PopupType.TRANSLUCENT_DOOR) {
+            return false;
+        }
+        int right = popupX + getPopupWidth();
+        int buttonWidth = 18;
+        int buttonHeight = 10;
+        int buttonTop = popupY + 4;
+        int closeLeft = right - POPUP_CLOSE_SIZE - 4;
+        int resetLeft = closeLeft - 6 - buttonWidth;
+        int resetRight = resetLeft + buttonWidth;
+        int resetBottom = buttonTop + buttonHeight;
+        return mouseX >= resetLeft && mouseX < resetRight && mouseY >= buttonTop && mouseY < resetBottom;
+    }
+
     private boolean isClickGuiModule(YuriData.Module module) {
         return "Click GUI".equals(module.title);
     }
@@ -1865,12 +1900,12 @@ public final class YuriScreen extends Screen {
         return "Mob ESP".equals(module.title);
     }
 
-    private boolean isOpsecModule(YuriData.Module module) {
-        return "Name change".equals(module.title) || "Opsec".equals(module.title);
+    private boolean isTranslucentDoorModule(YuriData.Module module) {
+        return "Translucent Door".equals(module.title);
     }
 
-    private boolean isCustomScoreboardModule(YuriData.Module module) {
-        return "Custom Scoreboard".equals(module.title);
+    private boolean isOpsecModule(YuriData.Module module) {
+        return "Name change".equals(module.title) || "Opsec".equals(module.title);
     }
 
     private boolean isImageHudModule(YuriData.Module module) {
@@ -1900,6 +1935,7 @@ public final class YuriScreen extends Screen {
         if (imageHudPathInput != null) {
             if (showImageHud) {
                 imageHudPendingImportPath = null;
+                syncImageHudPopupHeight();
                 syncingImageHudPathInput = true;
                 imageHudPathInput.setValue(ImageHudModule.getImagePath());
                 syncingImageHudPathInput = false;
@@ -2111,8 +2147,8 @@ public final class YuriScreen extends Screen {
             : type == PopupType.RENDER_OPTIMISER ? renderOptimiserPopupWidth
             : type == PopupType.CHAT ? chatPopupWidth
             : type == PopupType.MOB_ESP ? mobEspPopupWidth
+            : type == PopupType.TRANSLUCENT_DOOR ? translucentDoorPopupWidth
             : type == PopupType.OPSEC ? opsecPopupWidth
-            : type == PopupType.CUSTOM_SCOREBOARD ? customScoreboardPopupWidth
             : type == PopupType.IMAGE_HUD ? imageHudPopupWidth
             : clickPopupWidth;
     }
@@ -2123,8 +2159,8 @@ public final class YuriScreen extends Screen {
             : type == PopupType.RENDER_OPTIMISER ? renderOptimiserPopupHeight
             : type == PopupType.CHAT ? chatPopupHeight
             : type == PopupType.MOB_ESP ? mobEspPopupHeight
+            : type == PopupType.TRANSLUCENT_DOOR ? translucentDoorPopupHeight
             : type == PopupType.OPSEC ? opsecPopupHeight
-            : type == PopupType.CUSTOM_SCOREBOARD ? customScoreboardPopupHeight
             : type == PopupType.IMAGE_HUD ? imageHudPopupHeight
             : clickPopupHeight;
     }
@@ -2152,12 +2188,12 @@ public final class YuriScreen extends Screen {
         } else if (type == PopupType.MOB_ESP) {
             mobEspPopupWidth = w;
             mobEspPopupHeight = h;
+        } else if (type == PopupType.TRANSLUCENT_DOOR) {
+            translucentDoorPopupWidth = w;
+            translucentDoorPopupHeight = h;
         } else if (type == PopupType.OPSEC) {
             opsecPopupWidth = w;
             opsecPopupHeight = h;
-        } else if (type == PopupType.CUSTOM_SCOREBOARD) {
-            customScoreboardPopupWidth = w;
-            customScoreboardPopupHeight = h;
         } else if (type == PopupType.CLICK_GUI) {
             clickPopupWidth = w;
             clickPopupHeight = h;
@@ -2339,8 +2375,8 @@ public final class YuriScreen extends Screen {
         RENDER_OPTIMISER,
         CHAT,
         MOB_ESP,
+        TRANSLUCENT_DOOR,
         OPSEC,
-        CUSTOM_SCOREBOARD,
         IMAGE_HUD
     }
 
@@ -2348,6 +2384,17 @@ public final class YuriScreen extends Screen {
         int rows = RenderOptimiserModule.optionCount() * RENDER_OPTIMISER_ROW_HEIGHT;
         int target = 24 + rows + 10;
         renderOptimiserPopupHeight = clamp(target, 80, Math.max(80, height - SCREEN_PADDING * 2));
+    }
+
+    private void syncImageHudPopupHeight() {
+        int target = imageHudPendingImportPath == null
+            ? IMAGE_HUD_POPUP_HEIGHT_COLLAPSED
+            : IMAGE_HUD_POPUP_HEIGHT_EXPANDED;
+        imageHudPopupHeight = clamp(target, 80, Math.max(80, height - SCREEN_PADDING * 2));
+        if (activePopup == PopupType.IMAGE_HUD) {
+            popupY = clamp(popupY, SCREEN_PADDING, Math.max(SCREEN_PADDING, height - getPopupHeight() - SCREEN_PADDING));
+            layoutPopupWidgets();
+        }
     }
 
 }

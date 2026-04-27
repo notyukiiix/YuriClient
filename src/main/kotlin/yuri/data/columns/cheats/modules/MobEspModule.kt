@@ -1,7 +1,11 @@
 package yuri.data.columns.cheats.modules
 
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents
 import net.minecraft.client.Minecraft
+import net.minecraft.client.player.LocalPlayer
 import net.minecraft.client.player.AbstractClientPlayer
+import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.Entity
@@ -12,6 +16,7 @@ import net.minecraft.world.entity.monster.Giant
 import net.minecraft.world.entity.player.Player
 import yuri.YuriData
 import yuri.util.DungeonUtils
+import java.util.LinkedHashSet
 
 object MobEspModule {
     private const val TITLE = "Mob ESP"
@@ -47,10 +52,11 @@ object MobEspModule {
         true,
         true
     )
+    private val starredRegex = Regex("^.*✯ .*\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?[kM]?❤$")
     private var glowColorRgb: Int = 0xFFFF00
-    private val starMobs: MutableSet<Int> = hashSetOf()
-    private val checkedMarkers: MutableSet<Int> = hashSetOf()
-    private var lastLevelIdentity: String = ""
+    private var starred: MutableSet<Int> = LinkedHashSet()
+    private var shadowAssassins: MutableSet<Int> = LinkedHashSet()
+    private var eventsRegistered: Boolean = false
 
     @JvmStatic
     fun optionCount(): Int = labels.size
@@ -114,6 +120,26 @@ object MobEspModule {
     fun shouldShowHiddenStealthy(): Boolean = shouldHiddenMobs() && toggles[OPTION_SHOW_STEALTHY]
 
     @JvmStatic
+    fun registerEvents() {
+        if (eventsRegistered) {
+            return
+        }
+        eventsRegistered = true
+        ClientTickEvents.END_WORLD_TICK.register(ClientTickEvents.EndWorldTick { world ->
+            if (!module.enabled || !DungeonUtils.inDungeons()) {
+                starred.clear()
+                shadowAssassins.clear()
+                return@EndWorldTick
+            }
+            updateTrackedEntities(world.entitiesForRendering())
+        })
+        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register(ClientWorldEvents.AfterClientWorldChange { _, _ ->
+            starred.clear()
+            shadowAssassins.clear()
+        })
+    }
+
+    @JvmStatic
     fun shouldRevealHiddenMob(entity: Entity): Boolean {
         if (!shouldHiddenMobs() || !DungeonUtils.inDungeons() || !entity.isInvisible) {
             return false
@@ -138,98 +164,80 @@ object MobEspModule {
 
     @JvmStatic
     fun shouldStarredMobEsp(entity: Entity): Boolean {
-        if (!shouldStarredEsp() || !DungeonUtils.inDungeons()) {
+        if (!module.enabled || !DungeonUtils.inDungeons()) {
             return false
         }
-        refreshForWorldChange()
-        if (entity.id in starMobs) {
-            return true
-        }
-        // Extra fallback checks so obvious dungeon targets are still highlighted even without marker packets.
-        return when (entity) {
-            is Bat -> !entity.isInvisible && !entity.isPassenger
-            is EnderMan -> entity.name.string == "Dinnerbone"
-            is Player -> {
-                val n = entity.name.string
-                n.contains("Shadow Assassin", ignoreCase = true) ||
-                    n.equals("Lost Adventurer", ignoreCase = true) ||
-                    n.equals("Diamond Guy", ignoreCase = true) ||
-                    n.equals("King Midas", ignoreCase = true) ||
-                    isStarredName(n) ||
-                    displayName(entity)?.let { isStarredName(it) } == true
-            }
-            else -> {
-                if (isStarredName(entity.name.string)) {
-                    return true
-                }
-                val name = displayName(entity) ?: return false
-                isStarredName(name)
-            }
-        }
+        if (shouldStarredEsp() && starred.contains(entity.id)) return true
+        if (shouldShowHiddenShadowAssassins() && shadowAssassins.contains(entity.id)) return true
+        return false
     }
 
     @JvmStatic
     fun onEntityDataUpdated(entityId: Int) {
-        if (!shouldStarredEsp() || !DungeonUtils.inDungeons()) {
-            return
-        }
-        refreshForWorldChange()
-        val mc = Minecraft.getInstance()
-        val level = mc.level ?: return
+        // Kept for compatibility with existing packet hooks.
+        if (!module.enabled || !DungeonUtils.inDungeons()) return
+        val level = Minecraft.getInstance().level ?: return
         val entity = level.getEntity(entityId) ?: return
-        if (entity is ArmorStand) {
-            val markerName = entity.customName?.string ?: return
-            // Hypixel starred mob markers: star symbol in the line (often with HP / heart suffix).
-            if (isStarredName(markerName)) {
-                checkStarMob(entity, markerName)
+        if (entity.isRemoved) {
+            starred.remove(entityId)
+            shadowAssassins.remove(entityId)
+        }
+    }
+
+    private fun updateTrackedEntities(entities: Iterable<Entity>) {
+        val localPlayer = Minecraft.getInstance().player
+        val currentStarred = LinkedHashSet<Int>()
+        val currentShadow = LinkedHashSet<Int>()
+
+        for (entity in entities) {
+            if (entity is AbstractClientPlayer && entity.name.string == "Shadow Assassin") {
+                currentShadow.add(entity.id)
             }
-            return
+            if (entity !is ArmorStand || !entity.isInvisible) {
+                continue
+            }
+            val strippedName = stripFormatting(entity.customName) ?: continue
+            if (!starredRegex.matches(strippedName)) {
+                continue
+            }
+            val owner = findStarOwner(entity, entities, localPlayer) ?: continue
+            currentStarred.add(owner.id)
+        }
+
+        starred = currentStarred
+        shadowAssassins = currentShadow
+    }
+
+    private fun findStarOwner(marker: ArmorStand, entities: Iterable<Entity>, localPlayer: LocalPlayer?): Entity? {
+        val markerPos = marker.position()
+        val markerX = round1(markerPos.x)
+        val markerZ = round1(markerPos.z)
+        return entities.firstOrNull { candidate ->
+            if (!isValidStarCandidate(candidate, localPlayer)) {
+                return@firstOrNull false
+            }
+            val pos = candidate.position()
+            round1(pos.x) == markerX && round1(pos.z) == markerZ
+        }
+    }
+
+    private fun isValidStarCandidate(entity: Entity, localPlayer: LocalPlayer?): Boolean {
+        if (entity is ArmorStand || entity.isRemoved) {
+            return false
         }
         if (entity is Player) {
-            val n = entity.name.string
-            if (n.equals("Shadow Assassin", ignoreCase = true) ||
-                n.equals("Lost Adventurer", ignoreCase = true) ||
-                n.equals("Diamond Guy", ignoreCase = true) ||
-                n.equals("King Midas", ignoreCase = true)
-            ) {
-                starMobs.add(entity.id)
-            }
+            return entity != localPlayer
         }
+        return true
     }
 
-    private fun checkStarMob(armorStand: ArmorStand, markerName: String) {
-        if (!checkedMarkers.add(armorStand.id)) {
-            return
-        }
-        val level = armorStand.level()
-        val offset = if (markerName.uppercase().contains("WITHERMANCER")) 3 else 1
-        val directId = armorStand.id - offset
-        val direct = level.getEntity(directId)
-        if (direct != null && direct !is ArmorStand) {
-            starMobs.add(direct.id)
-            return
-        }
-        val nearby = level.getEntities(armorStand, armorStand.boundingBox.move(0.0, -1.0, 0.0)) { it !is ArmorStand }
-        val candidate = nearby.firstOrNull {
-            when (it) {
-                is Player -> !it.isInvisible && it != Minecraft.getInstance().player
-                is LivingEntity -> true
-                else -> true
-            }
-        }
-        if (candidate != null) {
-            starMobs.add(candidate.id)
-        }
-    }
+    private fun round1(value: Double): Double = kotlin.math.round(value * 10.0) / 10.0
 
-    private fun refreshForWorldChange() {
-        val level = Minecraft.getInstance().level
-        val id = level?.dimension()?.location()?.toString() ?: "none"
-        if (id != lastLevelIdentity) {
-            lastLevelIdentity = id
-            starMobs.clear()
-            checkedMarkers.clear()
-        }
+    private fun stripFormatting(component: Component?): String? {
+        val raw = component?.string?.trim() ?: return null
+        if (raw.isEmpty()) return null
+        val noSection = raw.replace(Regex("(?i)§[0-9A-FK-OR]"), "")
+        return noSection.trim()
     }
 
     private fun displayName(entity: Entity): String? =

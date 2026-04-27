@@ -82,7 +82,7 @@ object OpsecTextMasker {
             var bestIndex = -1
             var bestName: String? = null
             for (name in replacements.keys) {
-                val idx = text.indexOf(name, cursor)
+                val idx = indexOfIgnoreCase(text, name, cursor)
                 if (idx >= 0 && (bestIndex < 0 || idx < bestIndex)) {
                     bestIndex = idx
                     bestName = name
@@ -113,14 +113,31 @@ object OpsecTextMasker {
     private fun applyStringMask(input: String, forcedUuid: java.util.UUID?, fallbackName: String?): String {
         var out = input
         for ((name, replacement) in GlobalCosmetics.replacementLegacyMap()) {
-            out = out.replace(name, replacement, ignoreCase = false)
+            out = out.replace(name, replacement, ignoreCase = true)
         }
         val forcedName = GlobalCosmetics.replacementNameFor(forcedUuid, fallbackName)
         val forcedReplacement = GlobalCosmetics.replacementLegacyFor(forcedUuid)
         if (!forcedName.isNullOrBlank() && !forcedReplacement.isNullOrBlank()) {
-            out = out.replace(forcedName, forcedReplacement, ignoreCase = false)
+            out = out.replace(forcedName, forcedReplacement, ignoreCase = true)
         }
         return applyOpsec(out)
+    }
+
+    private fun indexOfIgnoreCase(text: String, needle: String, startIndex: Int): Int {
+        if (needle.isEmpty()) {
+            return startIndex.coerceIn(0, text.length)
+        }
+        val start = startIndex.coerceAtLeast(0)
+        val maxStart = text.length - needle.length
+        if (start > maxStart) {
+            return -1
+        }
+        for (i in start..maxStart) {
+            if (text.regionMatches(i, needle, 0, needle.length, ignoreCase = true)) {
+                return i
+            }
+        }
+        return -1
     }
 
     private fun applyOpsec(input: String): String {

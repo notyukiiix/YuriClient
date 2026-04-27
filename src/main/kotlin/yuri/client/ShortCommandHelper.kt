@@ -4,7 +4,8 @@ import java.util.Locale
 
 object ShortCommandHelper {
     private val aliases: Map<String, String> = linkedMapOf(
-        "hub" to "h",
+        // Keys are what the player types after `/`; values expand to the command body (no leading `/`).
+        "h" to "hub",
         "dh" to "warp dh",
         "dhub" to "warp dungeon_hub",
         "dungeons" to "warp dungeon_hub",
