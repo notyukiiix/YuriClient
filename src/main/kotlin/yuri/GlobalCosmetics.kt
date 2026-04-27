@@ -47,7 +47,7 @@ object GlobalCosmetics {
         PlayerCosmetic(
             UUID.fromString("0f046eba-34f1-4f5d-b579-317ad6eb88db"),
             "amy",
-            "&#691B55&lA&#E894C2&lm&#F4CAE1&ly&#FFFFFF&lU&#E894C2&lw&#691B55&lU",
+            "&#691B55&lM&#E894C2&li&#FFFFFF&lM&#691B55&li",
             0.9f,
             0.9f,
             0.9f
