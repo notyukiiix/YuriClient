@@ -15,7 +15,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import com.llamalad7.mixinextras.sugar.Local;
 import yuri.data.columns.cheats.TranslucentDoorEffects;
 
 @Mixin(ModelBlockRenderer.class)
@@ -25,7 +24,17 @@ public class ModelBlockRendererMixin {
         method = "putQuadData(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;Lnet/minecraft/client/renderer/block/ModelBlockRenderer$CommonRenderStorage;I)V",
         at = @At("HEAD")
     )
-    private void yuri$capturePutQuadPos(CallbackInfo ci, @Local(argsOnly = true, ordinal = 2) BlockPos pos) {
+    private void yuri$capturePutQuadPos(
+        BlockAndTintGetter level,
+        BlockState state,
+        BlockPos pos,
+        VertexConsumer consumer,
+        PoseStack.Pose pose,
+        BakedQuad quad,
+        Object renderStorage,
+        int defaultColor,
+        CallbackInfo ci
+    ) {
         TranslucentDoorEffects.beginPutQuadBlockPos(pos);
     }
 
@@ -33,7 +42,17 @@ public class ModelBlockRendererMixin {
         method = "putQuadData(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;Lnet/minecraft/client/renderer/block/ModelBlockRenderer$CommonRenderStorage;I)V",
         at = @At("TAIL")
     )
-    private void yuri$clearPutQuadPos(CallbackInfo ci) {
+    private void yuri$clearPutQuadPos(
+        BlockAndTintGetter level,
+        BlockState state,
+        BlockPos pos,
+        VertexConsumer consumer,
+        PoseStack.Pose pose,
+        BakedQuad quad,
+        Object renderStorage,
+        int defaultColor,
+        CallbackInfo ci
+    ) {
         TranslucentDoorEffects.endPutQuadBlockPos();
     }
 
