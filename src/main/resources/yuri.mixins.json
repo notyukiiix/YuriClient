@@ -1,0 +1,32 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "yuri.mixin",
+  "refmap": "yuri-refmap.json",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "ChatComponentAccess",
+    "ChatComponentMixin",
+    "ChatComponentOpsecMixin",
+    "ChatScreenMixin",
+    "ClientPacketListenerMixin",
+    "EntityMixin",
+    "EntityRendererMixin",
+    "EntityRenderDispatcherMixin",
+    "FontMixin",
+    "GuiMixin",
+    "ItemInHandRendererMixin",
+    "LivingEntityMixin",
+    "LivingEntityRendererMixin",
+    "ParticleEngineMixin",
+    "PlayerMixin",
+    "PlayerTabOverlayMixin",
+    "PlayerSizeRenderMixin",
+    "ScreenEffectRendererMixin",
+    "SwingLockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
