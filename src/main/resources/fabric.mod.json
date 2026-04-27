@@ -17,6 +17,7 @@
   "mixins": [
     "yuri.mixins.json"
   ],
+  "accessWidener": "yuri.accesswidener",
   "depends": {
     "fabricloader": ">=0.17.2",
     "minecraft": "~1.21.10",

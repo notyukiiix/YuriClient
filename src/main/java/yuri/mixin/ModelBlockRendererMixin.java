@@ -31,7 +31,7 @@ public class ModelBlockRendererMixin {
         VertexConsumer consumer,
         PoseStack.Pose pose,
         BakedQuad quad,
-        Object renderStorage,
+        ModelBlockRenderer.CommonRenderStorage renderStorage,
         int defaultColor,
         CallbackInfo ci
     ) {
@@ -49,7 +49,7 @@ public class ModelBlockRendererMixin {
         VertexConsumer consumer,
         PoseStack.Pose pose,
         BakedQuad quad,
-        Object renderStorage,
+        ModelBlockRenderer.CommonRenderStorage renderStorage,
         int defaultColor,
         CallbackInfo ci
     ) {

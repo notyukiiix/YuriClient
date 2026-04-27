@@ -18,6 +18,10 @@ repositories {
     mavenCentral()
 }
 
+loom {
+    accessWidenerPath = file("src/main/resources/yuri.accesswidener")
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
