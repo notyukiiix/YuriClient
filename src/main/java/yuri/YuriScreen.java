@@ -1909,7 +1909,7 @@ public final class YuriScreen extends Screen {
     }
 
     private boolean isImageHudModule(YuriData.Module module) {
-        return "Image HUD".equals(module.title);
+        return false;
     }
 
     private void openPopup(PopupType popupType) {

@@ -8,17 +8,16 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import yuri.data.columns.dev.modules.CustomScoreboardModule;
-import yuri.data.columns.visual.modules.ImageHudModule;
 
 /**
- * HUD layout screen: grid snap, Image HUD move (drag) and scale (scroll wheel).
+ * HUD layout screen for movable HUD elements.
  */
 public final class YuriHudEditScreen extends Screen {
     private static final int TEXT_COLOR = 0xFFF6F7FB;
     private static final int MUTED_TEXT_COLOR = 0xB6C0CE;
     private static final Component HEADER = Component.literal("HUD Editor").withStyle(ChatFormatting.BOLD);
-    private static final Component PLACEHOLDER = Component.literal("Enable Image HUD or Custom Scoreboard to edit HUD elements.");
-    private static final Component HINT = Component.literal("Drag HUD elements to move · Scroll over image to scale");
+    private static final Component PLACEHOLDER = Component.literal("Enable Custom Scoreboard to edit HUD elements.");
+    private static final Component HINT = Component.literal("Drag HUD elements to move");
 
     private final Screen returnScreen;
 
@@ -28,18 +27,7 @@ public final class YuriHudEditScreen extends Screen {
     }
 
     @Override
-    protected void init() {
-        super.init();
-        // Do not always reload here: reloadTexture() releases the GPU texture first; a failed second load
-        // would leave nothing on screen even when import just succeeded. Only reload if the path is set but not loaded.
-        if (!ImageHudModule.hasRenderableImage() && !ImageHudModule.getImagePath().isEmpty()) {
-            ImageHudModule.reloadTexture();
-        }
-    }
-
-    @Override
     public void removed() {
-        ImageHudModule.editorEndDrag();
         YuriConfig.save();
         super.removed();
     }
@@ -75,7 +63,7 @@ public final class YuriHudEditScreen extends Screen {
         }
 
         graphics.drawCenteredString(font, HEADER, width / 2, 14, TEXT_COLOR);
-        if (ImageHudModule.shouldShowHudEditorPlaceholder() && !CustomScoreboardModule.shouldRender()) {
+        if (!CustomScoreboardModule.shouldRender()) {
             graphics.drawCenteredString(font, PLACEHOLDER, width / 2, height / 2 - 6, MUTED_TEXT_COLOR);
         }
         graphics.drawCenteredString(font, HINT, width / 2, height - 36, MUTED_TEXT_COLOR);
@@ -83,46 +71,9 @@ public final class YuriHudEditScreen extends Screen {
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        // Draw last so nothing in the screen pass sits above the draggable image.
-        if (ImageHudModule.hasRenderableImage()) {
-            ImageHudModule.renderImage(graphics);
-            renderRemoveButton(graphics, mouseX, mouseY);
-        }
         if (CustomScoreboardModule.shouldRender()) {
             CustomScoreboardModule.renderHudEditor(graphics);
         }
-    }
-
-    private void renderRemoveButton(GuiGraphics graphics, int mouseX, int mouseY) {
-        int[] bounds = ImageHudModule.editorRemoveButtonBounds(mouseX, mouseY);
-        if (bounds == null) {
-            return;
-        }
-        int left = bounds[0];
-        int top = bounds[1];
-        int right = bounds[2];
-        int bottom = bounds[3];
-        boolean hovered = isInsideRemoveButton(mouseX, mouseY);
-        int fill = hovered ? 0xCCEA4D5A : 0xAA7A1A24;
-        int border = hovered ? 0xFFFF8591 : 0xFFCF5D6A;
-        graphics.fill(left, top, right, bottom, fill);
-        graphics.fill(left, top, right, top + 1, border);
-        graphics.fill(left, bottom - 1, right, bottom, border);
-        graphics.fill(left, top, left + 1, bottom, border);
-        graphics.fill(right - 1, top, right, bottom, border);
-        graphics.drawString(font, "x", left + 4, top + 2, 0xFFFFFFFF, false);
-    }
-
-    private boolean isInsideRemoveButton(double mouseX, double mouseY) {
-        int[] bounds = ImageHudModule.editorRemoveButtonBounds(mouseX, mouseY);
-        if (bounds == null) {
-            return false;
-        }
-        int left = bounds[0];
-        int top = bounds[1];
-        int right = bounds[2];
-        int bottom = bounds[3];
-        return mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom;
     }
 
     private static void renderAlignmentGrid(GuiGraphics graphics, int screenWidth, int screenHeight) {
@@ -194,14 +145,6 @@ public final class YuriHudEditScreen extends Screen {
             YuriHudEditLayout.toggleGridSnap();
             return true;
         }
-        if (event.button() == 0 && ImageHudModule.editorRemoveImageAt(event.x(), event.y())) {
-            YuriConfig.save();
-            return true;
-        }
-        if (event.button() == 0 && ImageHudModule.hasRenderableImage() && ImageHudModule.containsHudPoint(event.x(), event.y())) {
-            ImageHudModule.editorBeginDrag(event.x(), event.y());
-            return true;
-        }
         if (event.button() == 0 && CustomScoreboardModule.shouldRender() && CustomScoreboardModule.containsHudPoint(event.x(), event.y())) {
             CustomScoreboardModule.editorBeginDrag(event.x(), event.y());
             return true;
@@ -211,11 +154,6 @@ public final class YuriHudEditScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == 0 && ImageHudModule.editorDragging()) {
-            ImageHudModule.editorEndDrag();
-            YuriConfig.save();
-            return true;
-        }
         if (event.button() == 0 && CustomScoreboardModule.editorDragging()) {
             CustomScoreboardModule.editorEndDrag();
             YuriConfig.save();
@@ -226,10 +164,6 @@ public final class YuriHudEditScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-        if (ImageHudModule.editorDragging() && event.button() == 0) {
-            ImageHudModule.editorDragTo(event.x(), event.y(), width, height);
-            return true;
-        }
         if (CustomScoreboardModule.editorDragging() && event.button() == 0) {
             CustomScoreboardModule.editorDragTo(event.x(), event.y(), width, height);
             return true;
@@ -239,11 +173,6 @@ public final class YuriHudEditScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (ImageHudModule.hasRenderableImage() && ImageHudModule.containsHudPoint(mouseX, mouseY)) {
-            ImageHudModule.editorApplyScroll(scrollY);
-            YuriConfig.save();
-            return true;
-        }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 

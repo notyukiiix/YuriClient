@@ -11,7 +11,6 @@ import yuri.data.columns.cheats.modules.DoorEspModule
 import yuri.data.columns.dungeons.map.compat.DungeonMapConfig
 import yuri.data.columns.cheats.modules.MobEspModule
 import yuri.data.columns.cheats.modules.TranslucentDoorModule
-import yuri.data.columns.visual.modules.ImageHudModule
 import yuri.data.columns.visual.modules.RenderOptimiserModule
 import java.io.IOException
 import java.nio.file.Files
@@ -208,30 +207,6 @@ object YuriConfig {
         YuriDungeonSummaryHud.enabled =
             properties.getProperty("dungeon_summary.enabled", YuriDungeonSummaryHud.enabled.toString()).toBoolean()
 
-        ImageHudModule.clearAllImages()
-        val imageCount = getInt(properties, "image_hud.count", -1)
-        if (imageCount >= 0) {
-            for (index in 0 until imageCount) {
-                val path = properties.getProperty("image_hud.$index.path")?.trim().orEmpty()
-                if (path.isEmpty()) {
-                    continue
-                }
-                val x = getInt(properties, "image_hud.$index.x", 12)
-                val y = getInt(properties, "image_hud.$index.y", 12)
-                val scale = getFloat(properties, "image_hud.$index.scale", 1f)
-                ImageHudModule.addImageFromConfig(path, x, y, scale)
-            }
-        } else {
-            val legacyPath = properties.getProperty("image_hud.path", "").trim()
-            if (legacyPath.isNotEmpty()) {
-                val legacyX = getInt(properties, "image_hud.x", 12)
-                val legacyY = getInt(properties, "image_hud.y", 12)
-                val legacyScale = getFloat(properties, "image_hud.scale", 1f)
-                ImageHudModule.addImageFromConfig(legacyPath, legacyX, legacyY, legacyScale)
-            }
-        }
-        // Do not call ImageHudModule.reloadTexture() here — ClientModInitializer runs before the client is ready.
-
         if (needsLegacyLayoutMigration) {
             save()
         }
@@ -310,15 +285,6 @@ object YuriConfig {
         properties.setProperty("dungeon_summary.hud_x", YuriDungeonSummaryHud.hudX.toString())
         properties.setProperty("dungeon_summary.hud_y", YuriDungeonSummaryHud.hudY.toString())
         properties.setProperty("dungeon_summary.enabled", YuriDungeonSummaryHud.enabled.toString())
-
-        val imageCount = ImageHudModule.imageCount()
-        properties.setProperty("image_hud.count", imageCount.toString())
-        for (index in 0 until imageCount) {
-            properties.setProperty("image_hud.$index.path", ImageHudModule.imagePathAt(index))
-            properties.setProperty("image_hud.$index.x", ImageHudModule.imageXAt(index).toString())
-            properties.setProperty("image_hud.$index.y", ImageHudModule.imageYAt(index).toString())
-            properties.setProperty("image_hud.$index.scale", ImageHudModule.imageScaleAt(index).toString())
-        }
 
         try {
             Files.newOutputStream(path).use { outputStream ->

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents
@@ -13,7 +12,6 @@ import net.minecraft.client.Minecraft
 import org.lwjgl.glfw.GLFW
 import yuri.client.ChatCopyHelper
 import yuri.client.CustomScoreboardHudLayer
-import yuri.client.ImageHudHudLayer
 import yuri.client.ShortCommandHelper
 import yuri.data.columns.cheats.DungeonDoorTracker
 import yuri.data.columns.cheats.modules.DoorEspModule
@@ -29,14 +27,12 @@ import yuri.data.columns.visual.modules.YuriVisualBundleModule
 import yuri.data.columns.general.modules.ChatModule
 import yuri.data.columns.dev.modules.OpsecModule
 import yuri.data.columns.visual.modules.FullbrightModule
-import yuri.data.columns.visual.modules.ImageHudModule
 import yuri.data.columns.general.modules.SillySpeakModule
 
 class YuriClientMod : ClientModInitializer {
     override fun onInitializeClient() {
         GlobalCosmetics.init()
         YuriConfig.load()
-        ImageHudHudLayer.register()
         CustomScoreboardHudLayer.register()
         MobEspModule.registerEvents()
         DungeonDoorChatState.registerEvents()
@@ -49,10 +45,6 @@ class YuriClientMod : ClientModInitializer {
         ScoreCalculation.registerEvents()
         YuriHudMetricsModule.registerEvents()
         YuriVisualBundleModule.registerEvents()
-
-        ClientLifecycleEvents.CLIENT_STARTED.register {
-            ImageHudModule.reloadTexture()
-        }
 
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             GlobalCosmetics.refreshResolvedNames(client)
